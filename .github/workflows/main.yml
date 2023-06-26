@@ -1,7 +1,7 @@
 on: push
 jobs:
   bash-example:
-    runs-on: my-runer
+    runs-on: self-hosted
     steps:
       - name: Group of log lines
         run: |
