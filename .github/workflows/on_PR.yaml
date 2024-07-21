@@ -31,3 +31,25 @@ jobs:
     - name: Print files changed
       run: |
         echo "Files changed in this PR: ${{ env.FILES }}"
+
+    - name: Check PR files against TXT
+      id: check_files
+      run: |
+            echo "Checking files..."
+            PR_FILES=(${FILES//,/ })
+            FORBDN_FILES=$(cat forbidden-changes.txt)
+            MATCH_FOUND=false
+            
+            for file in "${PR_FILES[@]}"; do
+            if echo "$JSON_FILES" | grep -Fxq "$file"; then
+                echo "Match found: $file"
+                MATCH_FOUND=true
+            fi
+            done
+
+            if [ "$MATCH_FOUND" = true ]; then
+            echo "Some changed files match the names in the TXT file."
+            exit 1
+            else
+            echo "No matches found."
+            fi        
