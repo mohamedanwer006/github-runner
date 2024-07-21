@@ -34,4 +34,5 @@ jobs:
         echo "FILES=$FILES" >> $GITHUB_ENV
 
     - name: Print files changed
-      run: echo "Files changed in this PR: ${{ env.FILES }}"
+      run: |
+        echo "Files changed in this PR: ${{ env.FILES }}"
