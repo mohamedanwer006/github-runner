@@ -12,12 +12,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install GitHub CLI
-      run: sudo apt-get install gh
-
-    - name: Authenticate GitHub CLI
-      run: echo ${{ secrets.GB_TOKEN }} | gh auth login --with-token
-
     - name: Get PR number
       id: get_pr_number
       run: |
@@ -29,9 +23,11 @@ jobs:
       run: |
         PR_NUMBER=${{ env.PR_NUMBER }}
         echo "Fetching files for PR number: $PR_NUMBER"
-        FILES=$(gh pr view $PR_NUMBER --json files -q '.files[].path')
+        FILES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }}/files" | \
+                jq -r '.[].filename' | paste -sd "," -)
         echo "FILES=$FILES" >> $GITHUB_ENV
 
     - name: Print files changed
       run: |
-       echo "Files changed in this PR: ${{ env.FILES }}"
+        echo "Files changed in this PR: ${{ env.FILES }}"
