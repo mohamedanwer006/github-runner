@@ -12,6 +12,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Print files changed in PR
+      - name: Get PR files
+        id: pr_files
         run: |
-            git --no-pager diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
+            PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+            FILES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                    "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/files" | \
+                    jq -r '.[].filename')
+            echo "FILES=$FILES" >> $GITHUB_ENV
+
+      - name: Print files changed
+        run: |
+            echo "Files changed in this PR: $FILES"
