@@ -16,7 +16,8 @@ jobs:
       run: sudo apt-get install gh
 
     - name: Authenticate GitHub CLI
-      run: gh auth setup-git
+      run: |
+        gh auth login --with-token < ${{ secrets.GB_TOKEN }}
 
     - name: Get PR number
       id: get_pr_number
@@ -33,5 +34,4 @@ jobs:
         echo "FILES=$FILES" >> $GITHUB_ENV
 
     - name: Print files changed
-      run: | 
-        echo "Files changed in this PR: ${{ env.FILES }}"
+      run: echo "Files changed in this PR: ${{ env.FILES }}"
