@@ -14,18 +14,16 @@ jobs:
 
     - name: Get PR number
       id: get_pr_number
-      run: echo "PR_NUMBER=$(jq --raw-output .number "$GITHUB_EVENT_PATH")" >> $GITHUB_ENV
-
-    - name: Get PR files
-      id: pr_files
       run: |
-        FILES=$(curl -s \
-                "https://api.github.com/repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }}/files" | \
-                jq -r '.[].filename')
-        echo "FILES=$FILES" >> $GITHUB_ENV
+        PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+        echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+    - name: Fetch PR files
+      id: fetch_pr_files
+      run: |
+        PR_FILES=$(jq --raw-output '.pull_request.files | map(.filename) | join(", ")' "$GITHUB_EVENT_PATH")
+        echo "PR_FILES=$PR_FILES" >> $GITHUB_ENV
 
     - name: Print files changed
       run: |
-        echo "Files changed in this PR: $FILES"
-      env:
-        FILES: ${{ env.FILES }}
+         echo "Files changed in this PR: ${{ env.PR_FILES }}"
