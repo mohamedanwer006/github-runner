@@ -1,28 +1,26 @@
-name: PR Checks
+name: PR Changes
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build:
+  print-changes:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Get PR files
-        id: pr_files
-        run: |
-            PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-            FILES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/files" | \
-                 jq -r '.[].filename')
-            echo "FILES=$FILES" >> $GITHUB_ENV
+    - name: Get PR files
+      id: pr_files
+      run: |
+        PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+        FILES=$(jq --raw-output '.pull_request.changed_files[]' "$GITHUB_EVENT_PATH")
+        echo "FILES=$FILES" >> $GITHUB_ENV
 
-      - name: Print files changed
-        run: |
-            echo "Files changed in this PR: $FILES"
-        env:
-          FILES: ${{ env.FILES }}
+    - name: Print files changed
+      run: |
+         echo "Files changed in this PR: $FILES"
+      env:
+        FILES: ${{ env.FILES }}
