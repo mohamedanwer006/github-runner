@@ -1,17 +1,55 @@
-name: PR Checks
+name: PR Changes
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build:
+  print-changes:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        
-      - name: Print files changed in PR
-        run: |
-            git --no-pager diff --name-only ${{ github.base_ref }} ${{ github.head_ref }}
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get PR number
+      id: get_pr_number
+      run: |
+        PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+        echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+    - name: Get PR files
+      id: pr_files
+      run: |
+        PR_NUMBER=${{ env.PR_NUMBER }}
+        echo "Fetching files for PR number: $PR_NUMBER"
+        FILES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }}/files" | \
+                jq -r '.[].filename' | paste -sd "," -)
+        echo "FILES=$FILES" >> $GITHUB_ENV
+
+    - name: Print files changed
+      run: |
+        echo "Files changed in this PR: ${{ env.FILES }}"
+
+    - name: Check PR files against TXT
+      id: check_files
+      run: |
+            echo "Checking files..."
+            PR_FILES=(${FILES//,/ })
+            FORBDN_FILES=$(cat forbidden-changes.txt)
+            MATCH_FOUND=false
+            
+            for file in "${PR_FILES[@]}"; do
+            if echo "$JSON_FILES" | grep -Fxq "$file"; then
+                echo "Match found: $file"
+                MATCH_FOUND=true
+            fi
+            done
+
+            if [ "$MATCH_FOUND" = true ]; then
+            echo "Some changed files match the names in the TXT file."
+            exit 1
+            else
+            echo "No matches found."
+            fi        
